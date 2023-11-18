@@ -1,4 +1,4 @@
-import ort from "onnxruntime-web";
+import ort from "onnxruntime-node";
 import * as fs from "fs";
 import { execSync } from "child_process";
 import { processText } from "./text-utils.js";
@@ -12,7 +12,7 @@ class EspeakPhonemizer {
   private ipaFlag: number;
 
   constructor(
-    language: string = "en",
+    language: string = "en-us",
     ipaFlag: number = 1,
   ) {
     this.language = language;
@@ -21,8 +21,9 @@ class EspeakPhonemizer {
 
   public phonemize(text: string): string {
     try {
-      const command = `espeak --ipa=${this.ipaFlag} -q -b 1 -v ${this.language} "${text}"`;
-      const output = execSync(command).toString("utf8");
+      // Everything is a lie the _ padding that is included needs to be stripped anyway :')
+      const command = `espeak -q -b 1 --ipa=${this.ipaFlag} -v ${this.language} "${text}" --sep=""`;
+      const output = execSync(command).toString("utf-8");
       return this.cleanOutput(output);
     } catch (error) {
       console.error("Error executing espeak command:", error);
@@ -31,8 +32,9 @@ class EspeakPhonemizer {
   }
 
   private cleanOutput(output: string): string {
-    console.log("output: " + output);
     output = output.replace(/\r?\n|\r/g, "");
+    // Everything is a lie epseak only needs a single character stripped at the front.
+    output = output.replace(/^.{1}/g, "");
     // Clean and process the output as needed
     // This function can be modified based on how you want to process the output from espeak
     return output;
@@ -56,7 +58,7 @@ class TextTokenizer {
     pad: string = "<PAD>",
     eos: string = "<EOS>",
     bos: string = "<BOS>",
-    blank: string = " "
+    blank: string = "<BLNK>"
   ) {
     this.pad = pad;
     this.eos = eos;
@@ -71,13 +73,13 @@ class TextTokenizer {
     const vocab: VocabDictionary = {};
     let index = 0;
 
-    // Add special symbols
-    [this.blank, this.bos, this.eos, this.pad].forEach((symbol) => {
-      if (symbol) vocab[symbol] = index++;
+    // Add special symbols conditionally
+    [this.pad, this.eos, this.bos, this.blank].forEach((symbol) => {
+      if (symbol && symbol.length > 0) vocab[symbol] = index++;
     });
 
     // Add characters and punctuations
-    (this.characters + this.punctuations).split("").forEach((char) => {
+    this.characters.split("").concat(this.punctuations.split("")).forEach((char) => {
       if (!vocab.hasOwnProperty(char)) {
         vocab[char] = index++;
       }
@@ -109,18 +111,28 @@ class VitsCharacters extends TextTokenizer {
     }
 
     // Call the super constructor of TextTokenizer
-    super(graphemes, punctuations, pad, undefined, undefined, "_");
+    super(graphemes, punctuations, pad, undefined, undefined, "<BLNK>");
+  }
+
+  public intersperseBlankChar(charSequence): Array<string> {
+    const charToUse = this.blank ? this.vocab[this.blank] + 1 : this.vocab[this.pad];
+    let result = new Array(charSequence.length * 2 + 1).fill(charToUse);
+    for (let i = 0; i < charSequence.length; i++) {
+        result[i * 2 + 1] = charSequence[i];
+    }
+    return result;
   }
 
   protected createVocab(): VocabDictionary {
     const vocab: VocabDictionary = {};
 
+    console.log(this.blank);
     // Add pad and punctuations to vocab
     [
       this.pad,
       ...this.punctuations.split(""),
       ...this.characters.split(""),
-      this.blank,
+      this.blank
     ].forEach((symbol) => {
       if (symbol && !vocab.hasOwnProperty(symbol)) {
         vocab[symbol] = Object.keys(vocab).length;
@@ -138,12 +150,16 @@ class SpeechSynthesizer {
     this.session = session;
   }
 
-  static async create(uri: string = "./model/vits-2.onnx") {
+  static async create(uri: string = "./model/vits.onnx") {
     const opt: ort.InferenceSession.SessionOptions = {
       executionProviders: ["cpu"],
       logSeverityLevel: 3,
       logVerbosityLevel: 3,
-      executionMode: "parallel"
+      enableCpuMemArena: false,
+      enableMemPattern: false,
+      enableProfiling: false,
+      graphOptimizationLevel: "disabled",
+
     };
 
     // For compatability convert the URI into a properly
@@ -165,27 +181,33 @@ class SpeechSynthesizer {
   }
 
   async process(text: string): Promise<any> {
-    console.log("Text to synthesize: " + text);
+    console.log("Text: " + processText(text));
     const phenomizer = new EspeakPhonemizer("en-us", 1);
     const phenomes = phenomizer.phonemize(processText(text));
+    console.log("Phenomes: " + phenomes)
 
     const tokenizer = new VitsCharacters(
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-      ';:,.!?¡¿—…"«»“” ',
+      ";:,.!?¡¿—…\"«»“” ",
       "_",
       "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ"
     );
-    const tokens = tokenizer.tokenize(phenomes);
 
-    const x = new ort.Tensor("int64", tokens, [1, tokens.length]);
-    const x_length = new ort.Tensor("int64", [tokens.length]);
+    const tokens = tokenizer.tokenize(phenomes);
+    console.log("Tokens: " + tokens)
+
+    const interspersed = tokenizer.intersperseBlankChar(tokens);
+    console.log("Interspersed: " + interspersed)
+
+    const x = new ort.Tensor("int64", interspersed, [1, interspersed.length]);
+    const x_length = new ort.Tensor("int64", [x.dims[1]]);
     const noiseScale = 0.667;
     const lengthScale = 1.0;
-    const noiseScaleW = 0.8;
+    const noiseScaleDP = 0.8;
 
     const scales = new ort.Tensor(
       "float32",
-      new Float32Array([noiseScale, lengthScale, noiseScaleW])
+      new Float32Array([noiseScale, lengthScale, noiseScaleDP])
     );
 
     const input: Record<string, any> = {
