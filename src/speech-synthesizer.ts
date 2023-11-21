@@ -2,6 +2,9 @@ import ort from "onnxruntime-node";
 import * as fs from "fs";
 import { execSync } from "child_process";
 import { processText } from "./text-utils.js";
+import ESpeakNg from "./espeak-ng.js";
+import { resolve } from "path";
+import { Module } from "module";
 
 // This resolves a bug with WASM in nodejs.
 ort.env.wasm.numThreads = 1;
@@ -19,11 +22,16 @@ class EspeakPhonemizer {
     this.ipaFlag = ipaFlag;
   }
 
-  public phonemize(text: string): string {
+  public async phonemize(text: string): Promise<string> {
     try {
-      // Everything is a lie the _ padding that is included needs to be stripped anyway :')
-      const command = `espeak -q -b 1 --ipa=${this.ipaFlag} -v ${this.language} "${text}" --sep=""`;
-      const output = execSync(command).toString("utf-8");
+      const espeak = await ESpeakNg({
+        arguments: ["--phonout", "generated", "-q", "-b", "1" ,"--ipa=1", "-v", "en-us", `"${text}"`],
+      })
+
+      const output = espeak.FS.readFile('generated', { encoding: 'utf8'})
+
+      console.log("Output: " + output)
+
       return this.cleanOutput(output);
     } catch (error) {
       console.error("Error executing espeak command:", error);
@@ -32,9 +40,9 @@ class EspeakPhonemizer {
   }
 
   private cleanOutput(output: string): string {
-    output = output.replace(/\r?\n|\r/g, "");
+    output = output.replace(/\r?\n|\r/g, " ").trim();
     // Everything is a lie epseak only needs a single character stripped at the front.
-    output = output.replace(/^.{1}/g, "");
+    //output = output.replace(/^.{1}/g, "");
     // Clean and process the output as needed
     // This function can be modified based on how you want to process the output from espeak
     return output;
@@ -183,7 +191,7 @@ class SpeechSynthesizer {
   async process(text: string): Promise<any> {
     console.log("Text: " + processText(text));
     const phenomizer = new EspeakPhonemizer("en-us", 1);
-    const phenomes = phenomizer.phonemize(processText(text));
+    const phenomes = await phenomizer.phonemize(processText(text));
     console.log("Phenomes: " + phenomes)
 
     const tokenizer = new VitsCharacters(

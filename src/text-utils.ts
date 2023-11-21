@@ -43,8 +43,8 @@ function removeAuxSymbols(text: string): string {
 }
 
 const processText = (text: string) => {
-  const lowercase = text.toLocaleLowerCase();
-  const nosymbols = replaceSymbols(lowercase, "en");
+  //const lowercase = text.toLowerCase();
+  const nosymbols = replaceSymbols(text, "en");
   const noauxymbols = removeAuxSymbols(nosymbols);
   const noWhiteSpace = collapseWhitespace(noauxymbols);
 
