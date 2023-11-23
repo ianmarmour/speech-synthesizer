@@ -48,17 +48,17 @@ class TextTokenizer {
   public tokenize(text: string): number[] {
     let newThing: Array<number> = [];
 
-    Array.from(text).forEach(char => {
+    Array.from(text).forEach((char) => {
       if (char in this.vocab) {
         newThing.push(this.vocab[char]);
       } else {
-        console.log(`Character: ${char}`)
+        console.log(`Character: ${char}`);
         throw new Error(`Character ${char} not in vocabulary.`);
       }
     });
 
-    return newThing
+    return newThing;
   }
 }
 
-export { TextTokenizer, Vocabulary }
+export { TextTokenizer, Vocabulary };

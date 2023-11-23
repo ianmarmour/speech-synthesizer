@@ -1,4 +1,4 @@
-function replaceSymbols(text: string, lang: string = "en"): string {
+const replaceSymbols = (text: string, lang: string = "en"): string => {
   // Replace ';' with ','
   text = text.replace(/;/g, ",");
 
@@ -30,17 +30,17 @@ function replaceSymbols(text: string, lang: string = "en"): string {
   }
 
   return text;
-}
+};
 
-function collapseWhitespace(text: string): string {
+const collapseWhitespace = (text: string): string => {
   const whitespaceRe = /\s+/g;
 
   return text.replace(whitespaceRe, " ").trim();
-}
+};
 
-function removeAuxSymbols(text: string): string {
+const removeAuxSymbols = (text: string): string => {
   return text.replace(/[<>()\[\]"]+/g, "");
-}
+};
 
 const processText = (text: string) => {
   //const lowercase = text.toLowerCase();

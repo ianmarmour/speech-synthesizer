@@ -15,10 +15,10 @@ class SpeechSynthesizer {
 
   private constructor(session: ort.InferenceSession) {
     this.session = session;
-    this.phenomizer = new EspeakPhonemizer("en-us", 1);
+    this.phenomizer = new EspeakPhonemizer("en-us");
     this.tokenizer = new VitsTokenizer(
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
-      ";:,.!?¡¿—…\"«»“” ",
+      ';:,.!?¡¿—…"«»“” ',
       "_",
       "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ"
     );
@@ -33,7 +33,6 @@ class SpeechSynthesizer {
       enableMemPattern: false,
       enableProfiling: false,
       graphOptimizationLevel: "disabled",
-
     };
 
     // For compatability convert the URI into a properly
@@ -56,17 +55,22 @@ class SpeechSynthesizer {
 
   async process(text: string): Promise<any> {
     // Preformat text to remove random things like whitespace.
-    const processedText = processText(text)
+    const processedText = processText(text);
+
+    console.log("Processed Text:" + processedText);
 
     // Convert text to phenomes using espeak-ng bindings.
     const phenomes = await this.phenomizer.phonemize(processedText);
+    console.log("Phenomes:" + phenomes);
 
     // Convert phonemes to tokens using our vits tokenizer.
     const tokens = this.tokenizer.tokenize(phenomes);
+    console.log("Tokens:" + tokens);
 
     // Add blank characters throughout our input tokens to make sure
     // the speed of our speech is correct.
     const paddedTokens = this.tokenizer.intersperseBlankChar(tokens);
+    console.log("Padded Tokens:" + paddedTokens);
 
     const x = new ort.Tensor("int64", paddedTokens, [1, paddedTokens.length]);
     const x_length = new ort.Tensor("int64", [x.dims[1]]);
@@ -82,7 +86,7 @@ class SpeechSynthesizer {
     const input: Record<string, any> = {
       input: x,
       input_lengths: x_length,
-      scales: scales
+      scales: scales,
     };
 
     const output = await this.session.run(input, {});

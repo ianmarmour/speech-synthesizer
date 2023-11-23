@@ -1,4 +1,4 @@
-import { TextTokenizer, Vocabulary } from "./text-tokenizer";
+import { TextTokenizer, Vocabulary } from "./text-tokenizer.js";
 
 class VitsTokenizer extends TextTokenizer {
   constructor(
@@ -17,10 +17,14 @@ class VitsTokenizer extends TextTokenizer {
   }
 
   public intersperseBlankChar(charSequence): Array<string> {
-    const charToUse = this.blank ? this.vocab[this.blank] + 1 : this.vocab[this.pad];
+    console.log("Blank:" + this.blank);
+    console.log("Vocab:" + this.vocab);
+    const charToUse = this.blank
+      ? this.vocab[this.blank] + 1
+      : this.vocab[this.pad];
     let result = new Array(charSequence.length * 2 + 1).fill(charToUse);
     for (let i = 0; i < charSequence.length; i++) {
-        result[i * 2 + 1] = charSequence[i];
+      result[i * 2 + 1] = charSequence[i];
     }
     return result;
   }
@@ -29,19 +33,16 @@ class VitsTokenizer extends TextTokenizer {
     const vocab: Vocabulary = {};
 
     // Add pad and punctuations to vocab
-    [
-      this.pad,
-      ...this.punctuations,
-      ...this.characters,
-      this.blank
-    ].forEach((symbol) => {
-      if (symbol && !vocab.hasOwnProperty(symbol)) {
-        vocab[symbol] = Object.keys(vocab).length;
+    [this.pad, ...this.punctuations, ...this.characters, this.blank].forEach(
+      (symbol) => {
+        if (symbol && !vocab.hasOwnProperty(symbol)) {
+          vocab[symbol] = Object.keys(vocab).length;
+        }
       }
-    });
+    );
 
     return vocab;
   }
 }
 
-export { VitsTokenizer }
+export { VitsTokenizer };

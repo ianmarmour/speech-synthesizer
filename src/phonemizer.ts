@@ -1,4 +1,4 @@
-import { Punctuation } from "./punctuation";
+import { Punctuation } from "./punctuation.js";
 import ESpeakNg from "./espeak-ng.js";
 
 class EspeakPhonemizer {
@@ -6,13 +6,10 @@ class EspeakPhonemizer {
   private language: string;
   private ipaFlag: number;
 
-  constructor(
-    language: string = "en-us",
-    ipaFlag: number = 1,
-  ) {
+  constructor(language: string = "en-us", ipaFlag: number = 3) {
     this.language = language;
     this.ipaFlag = ipaFlag;
-    this.punctuation = new Punctuation;
+    this.punctuation = new Punctuation();
   }
 
   public async phonemize(text: string): Promise<string> {
@@ -20,14 +17,23 @@ class EspeakPhonemizer {
 
     let phenomized: Array<string> = [];
 
-    for(const text of preprocessedText) {
+    for (const text of preprocessedText) {
       try {
         const espeak = await ESpeakNg({
-          arguments: ["--phonout", "generated", '--sep=""', "-q", "-b=1", `--ipa=${this.ipaFlag}`, "-v", `${this.language}`, `"${text}"`],
-        })
+          arguments: [
+            "--phonout",
+            "generated",
+            '--sep=""',
+            "-q",
+            "-b=1",
+            `--ipa=${this.ipaFlag}`,
+            "-v",
+            `${this.language}`,
+            `"${text}"`,
+          ],
+        });
 
-        const output = espeak.FS.readFile('generated', { encoding: 'utf8'})
-
+        const output = espeak.FS.readFile("generated", { encoding: "utf8" });
 
         phenomized.push(this.cleanOutput(output));
       } catch (error) {
@@ -39,10 +45,10 @@ class EspeakPhonemizer {
     return Punctuation.restore(phenomized, puncMap);
   }
 
-    private cleanOutput(output: string): string {
+  private cleanOutput(output: string): string {
     output = output.replace(/\r\n|\n|\r/gm, " ").trim();
-    output = output.replace(/\u0000/g, '');
-    output = output.replace(/[\u200B-\u200D\uFEFF]/g, '');
+    output = output.replace(/\u0000/g, "");
+    output = output.replace(/[\u200B-\u200D\uFEFF]/g, "");
     // Everything is a lie epseak only needs a single character stripped at the front.
     //output = output.replace(/^.{1}/g, "");
     // Clean and process the output as needed
@@ -51,4 +57,4 @@ class EspeakPhonemizer {
   }
 }
 
-export { EspeakPhonemizer }
+export { EspeakPhonemizer };
