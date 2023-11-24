@@ -56,7 +56,7 @@ class SpeechSynthesizer {
     return new SpeechSynthesizer(session);
   }
 
-  async process(text: string): Promise<any> {
+  async synthesize(text: string): Promise<any> {
     // Preformat text to remove random things like whitespace.
     const cleanedText = phonemeCleaner(text);
     this.debugger("Cleaned Text:" + cleanedText);

@@ -20,5 +20,9 @@ import { SpeechSynthesizer } from "speech-synthesizer";
 const speechSynthesizer = await SpeechSynthesizer.create();
 
 // This outputs a Float32Array of single channel 22050hz audio data
-const audio = await speechSynthesizer.process("Hello world");
+const audio = await speechSynthesizer.synthesize("Hello world");
 ```
+
+## Additional Information
+
+This library is still in it's early stages and some of the code needs to be refactored and improved. The external interface at this point should be stable though and ready for consumption. There needs to be improvements made to the cross platform support and optimizations to speed still however this project is perfectly usable as is and should be sufficient for most use cases.
