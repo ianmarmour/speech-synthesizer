@@ -1,6 +1,6 @@
 {
   "name": "speech-synthesizer",
-  "version": "1.0.10",
+  "version": "1.0.0",
   "description": "Speech synthesis",
   "main": "dist/speech-synthesizer.js",
   "type": "module",
@@ -10,7 +10,7 @@
   "scripts": {
     "build": "npm run clean && tsc && npm run copy-files",
     "clean": "rimraf dist/",
-    "copy-files": "copyfiles -u 1 model/*.onnx dist/model/ && copyfiles -u 1 src/espeak/*.wasm dist/",
+    "copy-files": "copyfiles -u 1 model/*.onnx dist/model/",
     "prepublishOnly": "npm run build"
   },
   "author": "Ian Armour <ianmarmour@gmail.com>",
