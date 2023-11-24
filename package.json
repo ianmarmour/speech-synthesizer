@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "debug": "^4.3.4",
+    "espeak-ng": "^1.0.0",
     "onnxruntime-web": "1.16.1"
   }
 }

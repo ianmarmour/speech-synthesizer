@@ -1,5 +1,5 @@
 import { Punctuation } from "./punctuation.js";
-import ESpeakNg from "../espeak/espeak-ng.js";
+import ESpeakNg from "espeak-ng";
 
 class EspeakPhonemizer {
   private punctuation: Punctuation;
