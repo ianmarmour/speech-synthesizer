@@ -1,4 +1,4 @@
-import { TextTokenizer, Vocabulary } from "./text-tokenizer.js";
+import { TextTokenizer, Vocabulary } from "./tokenizer.js";
 
 class VitsTokenizer extends TextTokenizer {
   constructor(
@@ -17,8 +17,6 @@ class VitsTokenizer extends TextTokenizer {
   }
 
   public intersperseBlankChar(charSequence): Array<string> {
-    console.log("Blank:" + this.blank);
-    console.log("Vocab:" + this.vocab);
     const charToUse = this.blank
       ? this.vocab[this.blank] + 1
       : this.vocab[this.pad];

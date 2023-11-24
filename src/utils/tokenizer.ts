@@ -46,18 +46,16 @@ class TextTokenizer {
   }
 
   public tokenize(text: string): number[] {
-    let newThing: Array<number> = [];
-
-    Array.from(text).forEach((char) => {
+    // NOTE: We use the spread operator here
+    // to avoid any issues with multi-point
+    // unicode characters that could exist.
+    return [...text].map((char) => {
       if (char in this.vocab) {
-        newThing.push(this.vocab[char]);
+        return this.vocab[char];
       } else {
-        console.log(`Character: ${char}`);
-        throw new Error(`Character ${char} not in vocabulary.`);
+        throw new Error(`Character: ${char}, does not exist in vocabulary.`);
       }
     });
-
-    return newThing;
   }
 }
 

@@ -1,14 +1,16 @@
-import ort from "onnxruntime-node";
+import ort from "onnxruntime-web";
+import Debug, { Debugger } from "debug";
 import * as fs from "fs";
-import { processText } from "./text-utils.js";
-import { EspeakPhonemizer } from "./phonemizer.js";
-import { VitsTokenizer } from "./vits-tokenizer.js";
+import { phonemeCleaner } from "./utils/cleaners.js";
+import { EspeakPhonemizer } from "./utils/phonemizer.js";
+import { VitsTokenizer } from "./utils/vits-tokenizer.js";
 
 // This resolves a bug with WASM in nodejs.
 ort.env.wasm.numThreads = 1;
 ort.env.remoteModels = false;
 
 class SpeechSynthesizer {
+  private debugger: Debugger;
   private tokenizer: VitsTokenizer;
   private phenomizer: EspeakPhonemizer;
   private session: ort.InferenceSession;
@@ -22,11 +24,12 @@ class SpeechSynthesizer {
       "_",
       "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ"
     );
+    this.debugger = Debug("speech-synthesizer");
   }
 
   static async create(uri: string = "./model/vits.onnx") {
     const opt: ort.InferenceSession.SessionOptions = {
-      executionProviders: ["cpu"],
+      executionProviders: ["wasm"],
       logSeverityLevel: 3,
       logVerbosityLevel: 3,
       enableCpuMemArena: false,
@@ -55,22 +58,21 @@ class SpeechSynthesizer {
 
   async process(text: string): Promise<any> {
     // Preformat text to remove random things like whitespace.
-    const processedText = processText(text);
-
-    console.log("Processed Text:" + processedText);
+    const cleanedText = phonemeCleaner(text);
+    this.debugger("Cleaned Text:" + cleanedText);
 
     // Convert text to phenomes using espeak-ng bindings.
-    const phenomes = await this.phenomizer.phonemize(processedText);
-    console.log("Phenomes:" + phenomes);
+    const phenomes = await this.phenomizer.phonemize(cleanedText);
+    this.debugger("Phenomes:" + phenomes);
 
     // Convert phonemes to tokens using our vits tokenizer.
     const tokens = this.tokenizer.tokenize(phenomes);
-    console.log("Tokens:" + tokens);
+    this.debugger("Tokens:" + tokens);
 
     // Add blank characters throughout our input tokens to make sure
     // the speed of our speech is correct.
     const paddedTokens = this.tokenizer.intersperseBlankChar(tokens);
-    console.log("Padded Tokens:" + paddedTokens);
+    this.debugger("Padded Tokens:" + paddedTokens);
 
     const x = new ort.Tensor("int64", paddedTokens, [1, paddedTokens.length]);
     const x_length = new ort.Tensor("int64", [x.dims[1]]);
