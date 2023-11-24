@@ -4,7 +4,7 @@ NodeJS library providing local TTS synthesis leveraging VITS (Conditional Variat
 
 ## Introduction
 
-This library is based on the work from the folks over at [Coqui.ai](https://coqui.ai/), specifically the code in this repository is based on their [TTS](https://github.com/coqui-ai/TTS) work. This library provides a completly local TTS pipeline that can run in both the browser and server side in NodeJS environments.
+This library provides a completly local TTS pipeline that can run in both the browser and in server side NodeJS environments. As far as I'm aware of this library is one of the first of it's kind as previous TTS's libraries have either called 3rd party APIs or relied on older TTS methods such as E-Speak. This library is based on the work from the folks over at [Coqui.ai](https://coqui.ai/), specifically their [TTS](https://github.com/coqui-ai/TTS) work.
 
 ## Install
 
